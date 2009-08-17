@@ -30,9 +30,9 @@ class CocoaGist < OSX::NSObject
     end
   end
   
-  # def connection_didFailWithError(conn, err)
-  #   p err.userInfo[:NSLocalizedDescription]
-  # end
+  def connection_didFailWithError(_, error)
+    @delegate.pastie_on_error(self, error.userInfo[:NSLocalizedDescription].to_s)
+  end
   
   private
   

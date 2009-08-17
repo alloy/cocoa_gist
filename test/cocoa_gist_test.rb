@@ -81,4 +81,10 @@ describe "A CocoaGist" do
     @gist.delegate.expects(:pastie_on_success).with(@gist, url)
     @gist.connection_willSendRequest_redirectResponse('connection', request, response).should == nil
   end
+  
+  it "should report an error to the delegate" do
+    error = mock('NSError', :userInfo => { :NSLocalizedDescription => 'mew' })
+    @gist.delegate.expects(:pastie_on_error).with(@gist, 'mew')
+    @gist.connection_didFailWithError(nil, error)
+  end
 end
