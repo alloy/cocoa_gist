@@ -21,6 +21,13 @@ class CocoaGist < OSX::NSObject
     @connection = OSX::NSURLConnection.alloc.initWithRequest_delegate(request, self)
   end
   
+  def cancel
+    if @connection
+      @connection.cancel
+      @connection = nil
+    end
+  end
+  
   def connection_willSendRequest_redirectResponse(_, request, response)
     if response && response.statusCode == 302
       @delegate.pastie_on_success(self, request.URL.absoluteString)

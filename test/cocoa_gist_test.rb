@@ -87,4 +87,15 @@ describe "A CocoaGist" do
     @gist.delegate.expects(:pastie_on_error).with(@gist, 'mew')
     @gist.connection_didFailWithError(nil, error)
   end
+  
+  it "should cancel the connection if a conncetion exists" do
+    @gist.cancel
+    @gist.connection.should.be nil
+    
+    connection = mock('NSURLConnection')
+    @gist.instance_variable_set(:@connection, connection)
+    connection.expects(:cancel)
+    @gist.cancel
+    @gist.connection.should.be nil
+  end
 end
