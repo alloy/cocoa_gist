@@ -6,7 +6,8 @@ class CocoaGist < OSX::NSObject
   TIMEOUT = 10
   POLICY = 1 # NSURLRequestReloadIgnoringLocalCacheData
   
-  attr_reader :connection
+  attr_accessor :delegate
+  attr_reader :connection, :response
   
   def self.credentials
     @credentials ||= {
@@ -20,6 +21,19 @@ class CocoaGist < OSX::NSObject
     @connection = OSX::NSURLConnection.alloc.initWithRequest_delegate(request, self)
   end
   
+  def connection_willSendRequest_redirectResponse(_, request, response)
+    if response && response.statusCode == 302
+      @delegate.pastie_on_success(self, request.URL.absoluteString)
+      nil
+    else
+      request
+    end
+  end
+  
+  # def connection_didFailWithError(conn, err)
+  #   p err.userInfo[:NSLocalizedDescription]
+  # end
+  
   private
   
   def post_request(body)
@@ -29,8 +43,33 @@ class CocoaGist < OSX::NSObject
     request
   end
   
-  def params(content)
-    params = { 'file_contents[gistfile1]' => content }.merge(self.class.credentials)
-    params.inject('') { |body, (key, value)| body << "#{key}=#{CGI.escape(value)}&" }.chop
+  def params(content, syntax)
+    self.class.credentials.merge({
+      'file_contents[gistfile1]' => content,
+      'file_ext[gistfile1]'      => syntax_ext(syntax)
+    }).inject('') { |body, (key, value)| body << "#{key}=#{CGI.escape(value)}&" }.chop
   end
+  
+  def syntax_ext(syntax)
+    SYNTAX_TO_EXT[syntax.downcase]
+  end
+  
+  SYNTAX_TO_EXT = {
+    'c'            => '.h',
+    'css'          => '.css',
+    'diff'         => '.diff',
+    'haskell'      => '.hs',
+    'html'         => '.htm',
+    'java'         => '.java',
+    'javascript'   => '.js',
+    'objective-c'  => '.m',
+    'perl'         => '.pl',
+    'php'          => '.php',
+    'plain text'   => '.txt',
+    'python'       => '.py',
+    'ruby'         => '.rb',
+    'scheme'       => '.scm',
+    'shell script' => '.sh',
+    'sql'          => '.sql'
+  }
 end

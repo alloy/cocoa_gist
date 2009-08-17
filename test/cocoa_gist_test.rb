@@ -3,8 +3,7 @@ require "test/unit"
 require "test/spec"
 require "mocha"
 
-$:.unshift File.expand_path('../../lib', __FILE__)
-require "cocoa_gist"
+require File.expand_path('../../lib/cocoa_gist', __FILE__)
 
 GITHUB_ACCOUNT = { 'login' => 'alloy', 'token' => 'secret' }
 
@@ -31,16 +30,18 @@ describe "A CocoaGist" do
     CocoaGist.instance_variable_set(:@credentials, GITHUB_ACCOUNT)
     
     @gist = CocoaGist.alloc.init
+    @gist.delegate = mock('Delegate')
   end
   
   it "should serialize the parameters" do
-    @gist.send(:params, 'the content').split('&').sort.should ==
-      %w{ file_contents[gistfile1]=the+content  login=alloy  token=secret }.sort
+    @gist.send(:params, 'the content', 'ruby').split('&').sort.should ==
+      %w{ file_contents[gistfile1]=the+content  file_ext[gistfile1]=.rb  login=alloy  token=secret }.sort
   end
   
   it "should omit empty values from the serialized parameters" do
     CocoaGist.stubs(:credentials).returns({})
-    @gist.send(:params, 'the content').should == 'file_contents[gistfile1]=the+content'
+    @gist.send(:params, 'the content', 'html').split('&').sort.should ==
+      %w{ file_contents[gistfile1]=the+content  file_ext[gistfile1]=.htm }.sort
   end
   
   it "should post the paste contents" do
@@ -61,5 +62,23 @@ describe "A CocoaGist" do
     
     @gist.start('the content')
     @gist.connection.should.be connection
+  end
+  
+  it "should return the request if it there's no response so the process can continue" do
+    @gist.connection_willSendRequest_redirectResponse('connection', 'request', nil).should == 'request'
+  end
+  
+  it "should return the request if it's not a redirect so the process can continue" do
+    response = mock('Response', :statusCode => 100)
+    @gist.connection_willSendRequest_redirectResponse('connection', 'request', response).should == 'request'
+  end
+  
+  it "should stop the process by returning `nil' if the request is a redirect and send the redirect URL to the delegate" do
+    url = 'http://gists.example.com/12345'
+    request = OSX::NSURLRequest.requestWithURL(OSX::NSURL.URLWithString(url))
+    response = mock('Response', :statusCode => 302)
+    
+    @gist.delegate.expects(:pastie_on_success).with(@gist, url)
+    @gist.connection_willSendRequest_redirectResponse('connection', request, response).should == nil
   end
 end
