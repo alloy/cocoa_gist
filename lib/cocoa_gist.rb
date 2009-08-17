@@ -17,7 +17,7 @@ class CocoaGist < OSX::NSObject
   end
   
   def start(content, syntax = 'ruby')
-    request = post_request(params(content))
+    request = post_request(params(content, syntax))
     @connection = OSX::NSURLConnection.alloc.initWithRequest_delegate(request, self)
   end
   

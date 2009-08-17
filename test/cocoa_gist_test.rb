@@ -45,7 +45,7 @@ describe "A CocoaGist" do
   end
   
   it "should post the paste contents" do
-    @gist.expects(:params).with('the content').returns('the parameters')
+    @gist.expects(:params).with('the content', 'ruby').returns('the parameters')
     
     request = mock('NSMutableURLRequest')
     OSX::NSMutableURLRequest.expects(:requestWithURL_cachePolicy_timeoutInterval).with do |url, policy, timeout|
@@ -60,7 +60,7 @@ describe "A CocoaGist" do
     connection = mock('NSURLConnection')
     OSX::NSURLConnection.any_instance.expects(:initWithRequest_delegate).with(request, @gist).returns(connection)
     
-    @gist.start('the content')
+    @gist.start('the content', 'ruby')
     @gist.connection.should.be connection
   end
   
